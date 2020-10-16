@@ -80,29 +80,37 @@ def start_crawl(event, context):
 
 def crawl_url(event, context):
     logger.info('crawl_url invoked')
-    crawl_data = dynamodb.Table("crawled_urls")
+    crawled_urls = dynamodb.Table("crawled_urls")
     for record in event['Records']:
         body = _get_body(record)
         logger.info(record['body'])
         url = body['url']
-        path = urlparse(body['url']).path or '/'
+        parsed_url = urlparse(body['url'])
+        path = parsed_url.path or '/'
+        if parsed_url.query:
+            path = path + '?' + parsed_url.query
         output = {
             'path': path,
             'parent_url': body['parent_url'],
             'depth': body['depth']
         }
 
-        # TODO: Check if it exists in DynamoDB for this Connection
-        # TODO: Ignore if ConnectionID is different
-        # urls = crawl_data.get_item(Key={'url': url})
+        # Check if it exists in DynamoDB for this Connection
+        # Ignore if ConnectionID is different (previous crawl)
+        item = crawled_urls.get_item(Key={'url': url})
+        crawled_url = item.get('Item')
+        if crawled_url and crawled_url['connection_id'] == body['connection_id']:
+            # URL already crawled
+            logger.info('Skipping duplicate URL: {}'.format(crawled_url))
+            continue
 
         res = requests.get(url)
         if res.status_code == 200:
 
             # Add to Dynamo DB
-            crawl_data.put_item(Item={
+            crawled_urls.put_item(Item={
                 'url': url,
-                'connectionID': body['connection_id'],
+                'connection_id': body['connection_id'],
             })
 
             html = str(res.content)
