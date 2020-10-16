@@ -65,7 +65,7 @@ def start_crawl(event, context):
 
     crawl_task = {
         'base_url': body['url'],
-        'url': body['url'],
+        'url': urlparse(body['url']).geturl(),
         'depth': body['depth'],
         'parent_url': '',
         'connection_id': connection_id,
@@ -129,9 +129,10 @@ def crawl_url(event, context):
             for link in links:
                 if link.startswith('http'):
                     continue
+                link_url = urlparse(urljoin(body['base_url'], link)).geturl()
                 crawl_task = {
                     'base_url': body['base_url'],
-                    'url': urljoin(body['base_url'], link),
+                    'url': link_url,
                     'depth': depth,
                     'parent_url': body['url'],
                     'connection_id': body['connection_id'],
@@ -145,26 +146,3 @@ def crawl_url(event, context):
         else:
             # TODO: Handled failed GET requests
             return
-
-
-def ping(event, context):
-    logger.info('Ping requested.')
-    crawl_requests_table = dynamodb.Table("crawl_requests")
-    crawl_data = dynamodb.Table("crawl_data")
-    timestamp = int(time.mktime(time.gmtime()))
-    created_at = time.asctime(time.gmtime())
-    crawl_data.put_item(Item={
-        'url': 'https://www.google.com',
-        'timestamp': timestamp,
-        'depth': 0,
-        'connectionID': 'XXX',
-        'parent_url': 'https://gmail.com',
-        'created_at' : created_at
-    })
-    logger.info('Item added to database')
-    response = {
-        "statusCode": 200,
-        "body": "PONG!"
-    }
-
-    return response

@@ -58,12 +58,6 @@ provider:
 
 
 functions:
-  ping:
-    handler: handler.ping
-    events:
-      - http:
-          path: ping
-          method: get
   connectionManager:
     handler: handler.connection_manager
     events:
