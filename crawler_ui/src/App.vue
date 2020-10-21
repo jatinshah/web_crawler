@@ -60,7 +60,7 @@ export default {
   },
   created: function() {
     console.log('Starting connection to WSS');
-    this.connection = new WebSocket("wss://2p2eztuwej.execute-api.us-east-1.amazonaws.com/dev");
+    this.connection = new WebSocket("wss://2hjidiewad.execute-api.us-east-1.amazonaws.com/dev");
 
     this.connection.onmessage = (event) => {
       console.log(event['data']);
